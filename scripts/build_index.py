@@ -4,17 +4,21 @@ from pathlib import Path
 from sentence_transformers import SentenceTransformer
 from typing import List, Dict, Any
 from tqdm import tqdm
+import os
 
 class IndexBuilder:
     def __init__(self, model_name: str = "sentence-transformers/all-mpnet-base-v2"):
         """Initialize IndexBuilder with the specified sentence transformer model."""
         self.model = SentenceTransformer(model_name)
         self.batch_size = 32
-        self.data_dir = Path("data")
+        # Use environment variable for data directory or default to local path
+        self.data_dir = Path(os.getenv("DATA_DIR", "data"))
         self.data_dir.mkdir(exist_ok=True)
         
         # Initialize ChromaDB client
-        self.chroma_client = chromadb.PersistentClient(path=str(self.data_dir / "chroma"))
+        chroma_path = self.data_dir / "chroma"
+        chroma_path.mkdir(exist_ok=True)
+        self.chroma_client = chromadb.PersistentClient(path=str(chroma_path))
         
     def load_corpus(self, json_path: str) -> List[Dict[str, Any]]:
         """Load the Q&A corpus from JSON file."""

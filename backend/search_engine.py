@@ -4,12 +4,14 @@ from pathlib import Path
 from sentence_transformers import SentenceTransformer
 from typing import List, Dict, Any, Set
 import re
+import os
 
 class SearchEngine:
     def __init__(self, model_name: str = "sentence-transformers/all-mpnet-base-v2"):
         """Initialize search engine with model and load necessary files."""
         self.model = SentenceTransformer(model_name)
-        self.data_dir = Path("data")
+        # Use environment variable for data directory or default to local path
+        self.data_dir = Path(os.getenv("DATA_DIR", "data"))
         self.mental_health_terms: Set[str] = {
             "depress", "anxiety", "anxious", "sad", "stress", "therapy",
             "trauma", "grief", "panic", "mood", "mental", "emotion",
@@ -23,7 +25,12 @@ class SearchEngine:
         
     def _load_resources(self) -> None:
         """Load ChromaDB collection."""
-        client = chromadb.PersistentClient(path=str(self.data_dir / "chroma"))
+        # Create data directory if it doesn't exist
+        self.data_dir.mkdir(exist_ok=True)
+        chroma_path = self.data_dir / "chroma"
+        chroma_path.mkdir(exist_ok=True)
+        
+        client = chromadb.PersistentClient(path=str(chroma_path))
         self.collection = client.get_or_create_collection(
             name="compass",
             metadata={"hnsw:space": "cosine"}
